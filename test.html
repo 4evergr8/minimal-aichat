@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>MomoTalk 聊天界面</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Zain:ital,wght@0,200;0,300;0,400;0,700;0,800;0,900;1,300;1,400&display=swap');
+    </style>
+    <style>
+        /* 视频背景 */
+        #bg-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;      /* 填充模式 */
+            z-index: -2;
+            pointer-events: none;   /* 防止点击被阻挡 */
+        }
+
+
+        /* 黑色蒙版 */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.75); /* 黑色半透明 */
+            z-index: -1;
+        }
+
+        /* 主体容器 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center; /* 水平居中 */
+            align-items: center;     /* 垂直居中 */
+            background: transparent;
+        }
+
+        .app-container {
+            position: relative;
+            z-index: 1;
+            width: 885px;
+            height: 465px;
+            border-radius: 10px;        /* 圆角 */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;           /* 防止子元素溢出边角 */
+            background-color: rgba(255, 255, 255, 0.05); /* 可选：半透明背景防止内容太靠近边缘 */
+        }
+
+
+
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            font-family: sans-serif;
+        }
+        .header {
+            background-color: rgb(251,144,162);
+            color: white;
+            text-align: left;
+            font-size: 35px;
+            padding-left: 5%;
+            font-weight: 900;
+            font-family: 'Zain', sans-serif;
+            height: 45px;
+        }
+
+
+        .main {
+            display: flex;
+            height: calc(100vh - 56px);
+        }
+        .sidebar {
+            width: 72px;
+            min-width: 60px;
+            background-color: rgb(76,91,112);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+        }
+        .sidebar-button {
+            margin: 0 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .sidebar-button {
+            width: 100%;
+            aspect-ratio: 1 / 1; /* 保持正方形比例 */
+        }
+
+        .sidebar-button.active {
+            background-color: rgb(103,120,140);
+        }
+
+        .material-icons {
+            font-size: 40px;
+            color: rgb(120,128,141);
+        }
+        .sidebar-button.active {
+            background-color: rgb(103,120,140);
+        }
+        .sidebar-button.active .material-icons {
+            color: rgb(212,127,145);
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+        }
+        .panel-a {
+            width: 400px;
+            background-color: rgb(243,247,248);
+            border-right: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        .panel-b {
+            flex: 1;
+
+            background-color: rgb(255,255,255);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        #chat-box {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 6px;
+            margin-right: 5px;
+        }
+        button {
+            padding: 6px 10px;
+        }
+
+        .chat-list p {
+            display: none; /* 隐藏旧结构 */
+        }
+
+        .friend-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            height: 70px;
+            transition: background-color 0.2s;
+        }
+        .friend-item:hover {
+            background-color: #e4f0f5;
+        }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .friend-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .friend-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: rgb(69,74,80);
+        }
+
+        .friend-signature {
+            font-size: 15px;
+            color: rgb(165,172,175);
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        .chat-list p:hover {
+            background-color: #e4f0f5;
+        }
+
+        .setting-item {
+            margin: 10px 0;
+        }
+        .setting-item label {
+            display: block;
+            margin-bottom: 4px;
+        }
+        .message-bubble {
+            padding: 8px 12px;
+            border-radius: 10px;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+
+        .user-bubble {
+            background-color: #e0e0e0;
+            color: #000;
+            border-radius: 10px;
+        }
+
+        .model-bubble {
+            background-color: rgb(76, 91, 112);
+            color: white;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+<!-- 背景视频 -->
+<video autoplay muted loop id="bg-video">
+    <source src="video.mp4" type="video/mp4">
+    您的浏览器不支持 HTML5 视频。
+</video>
+
+<!-- 黑色蒙版 -->
+<div class="overlay"></div>
+
+<!-- 前景内容：聊天界面 -->
+<div class="app-container">
+
+<div class="header">HomoTalk</div>
+
+<div class="main">
+    <!-- 左侧图标栏 -->
+    <div class="sidebar">
+        <div class="sidebar-button active" id="btn-chat" onclick="switchTab('chat')">
+            <span class="material-icons">group</span>
+        </div>
+        <div class="sidebar-button" id="btn-settings" onclick="switchTab('settings')">
+            <span class="material-icons">settings</span>
+        </div>
+    </div>
+
+    <!-- 主体区域 -->
+    <div class="content">
+        <!-- A区 -->
+        <div class="panel-a">
+            <div id="chat-list" class="chat-list">
+                <div class="friend-item">
+                    <img src="yuuka.png" class="avatar">
+                    <div class="friend-info">
+                        <div class="friend-name">早濑优香</div>
+                        <div class="friend-signature">喜欢老师和小猫咪！</div>
+                    </div>
+                </div>
+
+
+                <p onclick="selectFriend('天雨アコ')">天雨アコ</p>
+            </div>
+            <div id="settings-list" style="display:none;">
+                <div class="setting-item">
+                    <label for="model">模型名：</label>
+                    <input type="text" id="model">
+                </div>
+                <div class="setting-item">
+                    <label for="api-key">API Key：</label>
+                    <input type="text" id="api-key">
+                </div>
+                <div class="setting-item">
+                    <label for="worker-url">Worker 地址：</label>
+                    <input type="text" id="worker-url">
+                </div>
+                <button onclick="window.open('https://aistudio.google.com/app/u/1/apikey?pli=1')">获取apikey</button>
+            </div>
+        </div>
+
+        <!-- B区 -->
+        <div class="panel-b">
+            <div id="chat-box"></div>
+            <div>
+                <input type="text" id="user-input" placeholder="请输入消息">
+                <button onclick="sendMessage()">发送</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('user-input');
+    const chatHistory = [
+        {role: 'user', content: '现在你来扮演《蔚蓝档案》中的早濑优香。请你用她的风格说话。'},
+        {role: 'model', content: '这完全在我的计算之中！'}
+    ];
+
+    function renderChat() {
+        chatBox.innerHTML = '';
+
+        for (const msg of chatHistory) {
+            const wrapper = document.createElement('div');
+            wrapper.className = msg.role === 'user' ? 'chat-message user' : 'chat-message model';
+
+            if (msg.role === 'user') {
+                const bubble = document.createElement('div');
+                bubble.className = 'message-bubble user-bubble';
+                bubble.innerText = msg.content;
+                wrapper.appendChild(bubble);
+            } else {
+                const avatar = document.createElement('img');
+                avatar.className = 'avatar';
+                avatar.src = 'avatar1.jpg'; // 可以根据选择的好友动态替换
+
+                const messageWrapper = document.createElement('div');
+                messageWrapper.className = 'message-wrapper';
+
+                const name = document.createElement('div');
+                name.className = 'friend-name';
+                name.innerText = '早濑优香'; // 同样支持动态替换
+
+                const bubble = document.createElement('div');
+                bubble.className = 'message-bubble model-bubble';
+                bubble.innerText = msg.content;
+
+                messageWrapper.appendChild(name);
+                messageWrapper.appendChild(bubble);
+
+                wrapper.appendChild(avatar);
+                wrapper.appendChild(messageWrapper);
+            }
+
+            chatBox.appendChild(wrapper);
+        }
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+
+    function selectFriend(name) {
+        chatHistory.length = 0;
+        chatHistory.push({role: 'user', content: `你好，${name}`});
+        chatHistory.push({role: 'model', content: `你好老师，我是${name}。`});
+        renderChat();
+    }
+
+    function sendMessage() {
+        const text = userInput.value.trim();
+        if (!text) return;
+
+        const model = document.getElementById('model').value.trim();
+        const apiKey = document.getElementById('api-key').value.trim();
+        const workerUrl = document.getElementById('worker-url').value.trim();
+
+        if (!model || !apiKey || !workerUrl) {
+            alert('模型名、API Key 和 Worker 地址都不能为空');
+            return;
+        }
+
+        chatHistory.push({role: 'user', content: text});
+        userInput.value = '';
+        renderChat();
+
+        const contents = chatHistory.map(item => ({
+            role: item.role,
+            parts: [{text: item.content}]
+        }));
+
+        const data = JSON.stringify({contents});
+        const fullUrl = `${workerUrl}/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', fullUrl);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+
+        xhr.onload = function () {
+            try {
+                const res = JSON.parse(xhr.response);
+                const reply = res?.candidates?.[0]?.content?.parts?.[0]?.text || '[无回复]';
+                chatHistory.push({role: 'model', content: reply});
+                renderChat();
+            } catch (e) {
+                chatHistory.push({role: 'model', content: '[解析失败]'});
+                renderChat();
+            }
+        };
+
+        xhr.onerror = function () {
+            chatHistory.push({role: 'model', content: '[请求失败]'});
+            renderChat();
+        };
+
+        xhr.send(data);
+    }
+
+    function switchTab(tab) {
+        const chatList = document.getElementById('chat-list');
+        const settingsList = document.getElementById('settings-list');
+
+        document.getElementById('btn-chat').classList.remove('active');
+        document.getElementById('btn-settings').classList.remove('active');
+
+        if (tab === 'chat') {
+            chatList.style.display = 'block';
+            settingsList.style.display = 'none';
+            document.getElementById('btn-chat').classList.add('active');
+        } else {
+            chatList.style.display = 'none';
+            settingsList.style.display = 'block';
+            document.getElementById('btn-settings').classList.add('active');
+        }
+    }
+
+    // 设置默认值
+    function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? decodeURIComponent(match[2]) : '';
+    }
+
+    document.getElementById('model').value = getCookie('model') || 'gemini-2.0-flash';
+    document.getElementById('api-key').value = getCookie('apiKey') || '';
+    document.getElementById('worker-url').value = getCookie('workerUrl') || 'https://gemini.4evergr8.workers.dev';
+
+    renderChat();
+</script>
+
+</body>
+</html>
